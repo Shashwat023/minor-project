@@ -1,0 +1,12 @@
+﻿{
+  "name": "memorycare-db",
+  "version": "1.0.0",
+  "description": "SpacetimeDB backend for MemoryCare. Dev 2 owns this.",
+  "scripts": {
+    "publish": "spacetime publish --anonymous memorycare-db",
+    "logs": "spacetime logs memorycare-db --follow"
+  },
+  "dependencies": {
+    "@clockworklabs/spacetimedb-sdk": "^0.12.0"
+  }
+}

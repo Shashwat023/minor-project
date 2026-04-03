@@ -1,0 +1,40 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+env/
+.venv/
+
+# Embeddings - never commit
+ml-service/embeddings/*.json
+ml-service/embeddings/*.pkl
+ml-service/embeddings/*.index
+
+# Node
+node_modules/
+dist/
+.next/
+*.tsbuildinfo
+
+# Environment files - never commit
+.env
+.env.local
+.env.*.local
+
+# SpacetimeDB
+.spacetime/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/settings.json
+.idea/
+*.swp
+
+# Logs
+*.log
+logs/
