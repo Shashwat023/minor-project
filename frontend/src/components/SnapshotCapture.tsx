@@ -4,6 +4,7 @@
 // Saved on disk: ml-service/client_snaps/{session_id}_snap{N:04d}_{ts}.png
 
 import React, { useEffect, useRef, useCallback } from "react";
+import { sendSnapshotToML } from "../services/mlSnapshotService";
 
 interface SnapshotCaptureProps {
   active:          boolean;
@@ -54,6 +55,9 @@ const SnapshotCapture: React.FC<SnapshotCaptureProps> = ({
     const b64            = canvas.toDataURL("image/png").split(",")[1];
 
     console.log(`[Snapshot] #${snapshotNumber}  source="${video.id}"  ${canvas.width}×${canvas.height}`);
+
+    // Non-blocking fire-and-forget to ML endpoint via env var
+    sendSnapshotToML(b64);
 
     try {
       // Relative path — proxied by Vite to localhost:8002

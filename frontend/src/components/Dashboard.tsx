@@ -21,6 +21,8 @@ import { useVoiceRecorder } from "../hooks/useVoiceRecorder";
 import { useWebRTC }        from "../hooks/useWebRTC";
 import { endSession, SessionEndResponse } from "../lib/api";
 import { useSpacetime }     from "./SpacetimeProvider";
+import { useSpacetimeTables } from "../hooks/useSpacetimeTables";
+import { useLiveDetection } from "../hooks/useLiveDetection";
 
 const CLIENTS = [
   { id: "person_101", name: "Margaret Johnson", relationship: "Patient" },
@@ -62,6 +64,7 @@ const Dashboard: React.FC = () => {
 
   // ── Hooks ──────────────────────────────────────────────────────────────────
   const { conn: stdbConn, isConnected: stdbConnected } = useSpacetime();
+  const { knownPersons } = useSpacetimeTables();
 
   const { startRecording, stopRecording, isRecording, currentChunk, error: recorderError } =
     useVoiceRecorder(sessionId);
@@ -75,6 +78,31 @@ const Dashboard: React.FC = () => {
     toggleMic, toggleCam,
     isMicOn, isCamOn, error: webrtcError,
   } = useWebRTC();
+
+  const liveDetection = useLiveDetection(sessionId);
+
+  const [newPersonId, setNewPersonId] = useState<string | null>(null);
+  const [newName, setNewName] = useState("");
+  const [newRelation, setNewRelation] = useState("");
+  const dismissedPersonIds = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (liveDetection && liveDetection.personId) {
+      const pId = liveDetection.personId;
+      if (dismissedPersonIds.current.has(pId)) return;
+
+      const known = knownPersons.find(p => p.personId === pId);
+      if (!known || !known.name) {
+        setNewPersonId((prev) => prev === pId ? prev : pId);
+      } else if (newPersonId === pId) {
+        setNewPersonId(null);
+      }
+    }
+  }, [liveDetection, knownPersons, newPersonId]);
+
+  const detectedPerson = liveDetection 
+    ? knownPersons.find(p => p.personId === liveDetection.personId) 
+    : undefined;
 
   // ── Client gate ────────────────────────────────────────────────────────────
   const clientConnected     = callStatus === "connected";
@@ -315,6 +343,8 @@ const Dashboard: React.FC = () => {
               relationship={selectedClient.relationship}
               roomId={sessionId}
               isSessionActive={isSessionActive}
+              liveDetection={liveDetection}
+              detectedPerson={detectedPerson}
             />
           </div>
 
@@ -344,6 +374,48 @@ const Dashboard: React.FC = () => {
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={handleDismissFinal}>
                 <IconClose /> Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {newPersonId && (
+        <div className="overlay" onClick={() => { dismissedPersonIds.current.add(newPersonId); setNewPersonId(null); }}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">New Person Detected</div>
+            <div className="modal-sub">Please identify the person on camera</div>
+            <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <input 
+                className="input" 
+                style={{ width: "100%", padding: "0.5rem", borderRadius: "var(--radius-sm)", border: "1px solid var(--glass-border)", background: "var(--bg-secondary)", color: "var(--text-1)" }}
+                placeholder="Name" 
+                value={newName} 
+                onChange={e => setNewName(e.target.value)} 
+                autoFocus
+              />
+              <input 
+                className="input" 
+                style={{ width: "100%", padding: "0.5rem", borderRadius: "var(--radius-sm)", border: "1px solid var(--glass-border)", background: "var(--bg-secondary)", color: "var(--text-1)" }}
+                placeholder="Relationship (e.g., Son, Doctor)" 
+                value={newRelation} 
+                onChange={e => setNewRelation(e.target.value)} 
+              />
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => { dismissedPersonIds.current.add(newPersonId); setNewPersonId(null); }}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={() => {
+                if (stdbConn) {
+                  callReducer(() => stdbConn.reducers.updatePersonDetails({ personId: newPersonId, name: newName, relation: newRelation }), "updatePersonDetails");
+                }
+                dismissedPersonIds.current.add(newPersonId);
+                setNewPersonId(null);
+                setNewName("");
+                setNewRelation("");
+              }}>
+                Save Identity
               </button>
             </div>
           </div>
