@@ -1,13 +1,15 @@
+
+# python -m uvicorn app.main:app --reload
 import os
 import numpy as np
 from deepface import DeepFace
 from numpy.linalg import norm
-# python -m uvicorn app.main:app --reload
+
 DB_PATH = "face_db"
 os.makedirs(DB_PATH, exist_ok=True)
 
 
-# 🔥 COSINE DISTANCE (better than Euclidean)
+# 🔥 COSINE DISTANCE
 def cosine_distance(a, b):
     return 1 - (np.dot(a, b) / (norm(a) * norm(b)))
 
@@ -19,7 +21,7 @@ def get_face_embedding(image):
 
         emb = DeepFace.represent(
             image,
-            model_name="ArcFace",   # ✅ upgraded model
+            model_name="ArcFace",
             enforce_detection=True
         )[0]["embedding"]
 
@@ -30,17 +32,8 @@ def get_face_embedding(image):
         return None
 
 
-# 🔥 CACHE (prevents recomputing every frame)
-cached_embeddings = None
-cached_filenames = None
-
-
+# 🔥 LOAD DATABASE (NO CACHE — SAFE)
 def load_database():
-    global cached_embeddings, cached_filenames
-
-    if cached_embeddings is not None:
-        return cached_embeddings, cached_filenames
-
     embeddings = []
     filenames = []
 
@@ -53,20 +46,16 @@ def load_database():
             embeddings.append(emb)
             filenames.append(file)
 
-    cached_embeddings = embeddings
-    cached_filenames = filenames
-
     return embeddings, filenames
 
 
-# 🔥 MATCHING
+# 🔥 MATCHING (STRICT — avoids false positives)
 def is_same_person(new_embedding, threshold=0.4):
     known_embeddings, filenames = load_database()
 
     if len(known_embeddings) == 0:
         return False, None, None
 
-    # 🔥 cosine distance
     distances = [
         cosine_distance(new_embedding, emb)
         for emb in known_embeddings
@@ -77,16 +66,16 @@ def is_same_person(new_embedding, threshold=0.4):
 
     print(f"🔍 Best Match: {best_match}, Distance: {min_dist:.4f}")
 
-    if min_dist < threshold:
+    # 🔥 STRICT MATCHING (VERY IMPORTANT)
+    if min_dist < threshold and min_dist < 0.35:
         return True, best_match, float(min_dist)
 
     return False, best_match, float(min_dist)
 
-# 🔥 RESET CACHE (REQUIRED)
+
+# 🔥 RESET CACHE (kept for compatibility)
 def reset_cache():
-    global cached_embeddings, cached_filenames
-    cached_embeddings = None
-    cached_filenames = None
+    pass
 
 
 # import os
