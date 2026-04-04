@@ -56,7 +56,7 @@ RULES (follow strictly):
 4. Examples of what good output looks like:
    - Transcript: "Hey, nice to meet you. How's everything?" → Summary: "Greetings and initial check-in."
    - Transcript: "How was your Goa trip? The night clubs were nice. Beaches were soothing." → Summary: "Discussed a recent trip to Goa, including nightlife and beach experiences."
-   - Transcript: "Do you remember your daughter's birthday last month?" → Summary: "Caregiver prompted a memory recall about a family birthday."
+   - Transcript: "Do you remember your daughter's birthday last month?" → Summary: "Client was prompted about a memory recall regarding a family birthday."
 5. If the transcript is mostly silence or filler words, reply with: "Brief pause or unclear audio."
 6. Never start with "The transcript shows" or "In this segment". Start directly with the topic.
 7. Never include quotation marks or literal phrases from the transcript.\
@@ -69,8 +69,8 @@ Your job: write ONE cohesive clinical paragraph (4-6 sentences) capturing the fu
 
 RULES:
 1. Synthesize the chunks — do NOT list them or number them.
-2. Mention: overall topics covered, patient engagement/mood, and any notable events or memory prompts.
-3. Write in third-person clinical note style: "The patient..." / "The caregiver..."
+2. Mention: overall topics covered, client engagement/mood, and any notable events or memory prompts.
+3. Write in third-person clinical note style (e.g., "The client..."). Do NOT use the words "caregiver" or "patient". Use "client".
 4. Do NOT repeat what was said word for word. Describe what HAPPENED at a high level.
 5. Keep it under 120 words.\
 """

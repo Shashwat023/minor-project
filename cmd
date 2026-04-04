@@ -12,4 +12,7 @@
  .\venv\Scripts\activate
  python run.py
 
+ cd bridge-snaps
+ python snap.py
+
  cloudflared tunnel -url http://localhost:5173
