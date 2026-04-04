@@ -12,36 +12,37 @@
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import VoiceRecorder      from "./VoiceRecorder";
-import LiveSummaryBlock   from "./LiveSummaryBlock";
-import VideoFeed          from "./VideoFeed";
-import SnapshotCapture    from "./SnapshotCapture";
-import { useLiveRedis }     from "../hooks/useLiveRedis";
+import VoiceRecorder from "./VoiceRecorder";
+import LiveSummaryBlock from "./LiveSummaryBlock";
+import VideoFeed from "./VideoFeed";
+import SnapshotCapture from "./SnapshotCapture";
+import FaceDisplay from "./FaceDisplay";
+import { useLiveRedis } from "../hooks/useLiveRedis";
 import { useVoiceRecorder } from "../hooks/useVoiceRecorder";
-import { useWebRTC }        from "../hooks/useWebRTC";
+import { useWebRTC } from "../hooks/useWebRTC";
 import { endSession, SessionEndResponse } from "../lib/api";
-import { useSpacetime }     from "./SpacetimeProvider";
+import { useSpacetime } from "./SpacetimeProvider";
 import { useSpacetimeTables } from "../hooks/useSpacetimeTables";
 import { useLiveDetection } from "../hooks/useLiveDetection";
 
 const CLIENTS = [
   { id: "person_101", name: "Margaret Johnson", relationship: "Patient" },
-  { id: "person_102", name: "Robert Smith",     relationship: "Patient" },
-  { id: "person_103", name: "Eleanor Davis",    relationship: "Patient" },
+  { id: "person_102", name: "Robert Smith", relationship: "Patient" },
+  { id: "person_103", name: "Eleanor Davis", relationship: "Patient" },
 ];
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
 const IconBrain = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
-    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
+    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
+    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
   </svg>
 );
-const IconPlay  = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>;
-const IconStop  = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>;
+const IconPlay = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>;
+const IconStop = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /></svg>;
 const IconClose = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 
@@ -57,10 +58,10 @@ function callReducer(fn: () => void, label: string) {
 
 const Dashboard: React.FC = () => {
   const [selectedClientId, setSelectedClientId] = useState(CLIENTS[0].id);
-  const [sessionId,        setSessionId]        = useState<string | null>(null);
-  const [isSessionActive,  setIsSessionActive]  = useState(false);
-  const [finalSummary,     setFinalSummary]     = useState<SessionEndResponse | null>(null);
-  const [errorToast,       setErrorToast]       = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isSessionActive, setIsSessionActive] = useState(false);
+  const [finalSummary, setFinalSummary] = useState<SessionEndResponse | null>(null);
+  const [errorToast, setErrorToast] = useState<string | null>(null);
 
   // ── Hooks ──────────────────────────────────────────────────────────────────
   const { conn: stdbConn, isConnected: stdbConnected } = useSpacetime();
@@ -79,35 +80,12 @@ const Dashboard: React.FC = () => {
     isMicOn, isCamOn, error: webrtcError,
   } = useWebRTC();
 
-  const liveDetection = useLiveDetection(sessionId);
-
-  const [newPersonId, setNewPersonId] = useState<string | null>(null);
-  const [newName, setNewName] = useState("");
-  const [newRelation, setNewRelation] = useState("");
-  const dismissedPersonIds = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (liveDetection && liveDetection.personId) {
-      const pId = liveDetection.personId;
-      if (dismissedPersonIds.current.has(pId)) return;
-
-      const known = knownPersons.find(p => p.personId === pId);
-      if (!known || !known.name) {
-        setNewPersonId((prev) => prev === pId ? prev : pId);
-      } else if (newPersonId === pId) {
-        setNewPersonId(null);
-      }
-    }
-  }, [liveDetection, knownPersons, newPersonId]);
-
-  const detectedPerson = liveDetection 
-    ? knownPersons.find(p => p.personId === liveDetection.personId) 
-    : undefined;
+  // Live detection UI overlay is now handled internally by VideoFeed -> FaceDisplay
 
   // ── Client gate ────────────────────────────────────────────────────────────
-  const clientConnected     = callStatus === "connected";
+  const clientConnected = callStatus === "connected";
   const recordingStartedRef = useRef(false);
-  const lastCueChunkRef     = useRef<number | null>(null);
+  const lastCueChunkRef = useRef<number | null>(null);
 
   // When the client connects → start recording
   useEffect(() => {
@@ -135,9 +113,9 @@ const Dashboard: React.FC = () => {
 
     callReducer(
       () => stdbConn.reducers.updateCue({
-        personId:  selectedClientId,
+        personId: selectedClientId,
         sessionId,
-        newCue:    summary,
+        newCue: summary,
       }),
       `updateCue chunk#${chunkNumber}`
     );
@@ -155,14 +133,14 @@ const Dashboard: React.FC = () => {
 
   // ── Start session ──────────────────────────────────────────────────────────
   const handleStartSession = useCallback(async () => {
-    const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    const id = `${selectedClientId}_session_${uniqueSuffix}`;
+    // 🔥 FOR TESTING: Matching bridge.py's hardcoded SESSION_ID
+    const id = "session_alpha_1";
 
     setSessionId(id);
     setIsSessionActive(true);
     setFinalSummary(null);
-    recordingStartedRef.current  = false;
-    lastCueChunkRef.current      = null;
+    recordingStartedRef.current = false;
+    lastCueChunkRef.current = null;
 
     // STDB: log meeting start
     if (stdbConn && stdbConnected) {
@@ -207,8 +185,8 @@ const Dashboard: React.FC = () => {
         callReducer(
           () => stdbConn.reducers.saveMeetingSummary({
             sessionId,
-            personId:    selectedClientId,
-            summary:     result.final_summary,
+            personId: selectedClientId,
+            summary: result.final_summary,
             meetingDate,
           }),
           "saveMeetingSummary"
@@ -260,12 +238,12 @@ const Dashboard: React.FC = () => {
           </span>
 
           <span className={`call-badge ${callStatus}`}>
-            {callStatus === "connected"    && <><span className="dot dot-active"  />Live</>}
-            {callStatus === "waiting"      && <><span className="dot dot-pending" />Waiting</>}
-            {callStatus === "connecting"   && <><span className="dot dot-pending" />Connecting</>}
-            {callStatus === "idle"         && "No call"}
-            {callStatus === "disconnected" && <><span className="dot dot-idle"    />Disconnected</>}
-            {callStatus === "error"        && "Error"}
+            {callStatus === "connected" && <><span className="dot dot-active" />Live</>}
+            {callStatus === "waiting" && <><span className="dot dot-pending" />Waiting</>}
+            {callStatus === "connecting" && <><span className="dot dot-pending" />Connecting</>}
+            {callStatus === "idle" && "No call"}
+            {callStatus === "disconnected" && <><span className="dot dot-idle" />Disconnected</>}
+            {callStatus === "error" && "Error"}
           </span>
 
           <select
@@ -343,12 +321,13 @@ const Dashboard: React.FC = () => {
               relationship={selectedClient.relationship}
               roomId={sessionId}
               isSessionActive={isSessionActive}
-              liveDetection={liveDetection}
-              detectedPerson={detectedPerson}
             />
           </div>
 
           <div className="bento-side">
+            {clientConnected && (
+              <FaceDisplay sessionId={sessionId} />
+            )}
             <LiveSummaryBlock
               summary={summary}
               chunkNumber={chunkNumber}
@@ -380,47 +359,7 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {newPersonId && (
-        <div className="overlay" onClick={() => { dismissedPersonIds.current.add(newPersonId); setNewPersonId(null); }}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-title">New Person Detected</div>
-            <div className="modal-sub">Please identify the person on camera</div>
-            <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <input 
-                className="input" 
-                style={{ width: "100%", padding: "0.5rem", borderRadius: "var(--radius-sm)", border: "1px solid var(--glass-border)", background: "var(--bg-secondary)", color: "var(--text-1)" }}
-                placeholder="Name" 
-                value={newName} 
-                onChange={e => setNewName(e.target.value)} 
-                autoFocus
-              />
-              <input 
-                className="input" 
-                style={{ width: "100%", padding: "0.5rem", borderRadius: "var(--radius-sm)", border: "1px solid var(--glass-border)", background: "var(--bg-secondary)", color: "var(--text-1)" }}
-                placeholder="Relationship (e.g., Son, Doctor)" 
-                value={newRelation} 
-                onChange={e => setNewRelation(e.target.value)} 
-              />
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => { dismissedPersonIds.current.add(newPersonId); setNewPersonId(null); }}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={() => {
-                if (stdbConn) {
-                  callReducer(() => stdbConn.reducers.updatePersonDetails({ personId: newPersonId, name: newName, relation: newRelation }), "updatePersonDetails");
-                }
-                dismissedPersonIds.current.add(newPersonId);
-                setNewPersonId(null);
-                setNewName("");
-                setNewRelation("");
-              }}>
-                Save Identity
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {errorToast && (
         <div className="toast" onClick={() => setErrorToast(null)}>

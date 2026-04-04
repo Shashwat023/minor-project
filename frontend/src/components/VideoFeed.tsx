@@ -25,8 +25,6 @@ interface VideoFeedProps {
   relationship:    string;
   roomId:          string | null;
   isSessionActive: boolean;
-  liveDetection?:  LiveDetection | null;
-  detectedPerson?: KnownPerson;
 }
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
@@ -52,8 +50,7 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
   localStream, remoteStream, callStatus,
   isHost, isMicOn, isCamOn,
   onToggleMic, onToggleCam, onLeave, onJoin,
-  patientName, relationship, roomId, isSessionActive,
-  liveDetection, detectedPerson
+  patientName, relationship, roomId, isSessionActive
 }) => {
   const remoteRef = useRef<HTMLVideoElement>(null);
   const localRef  = useRef<HTMLVideoElement>(null);
@@ -140,38 +137,6 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
                 <span className="waiting-dot" />
                 <span className="waiting-dot" />
                 <span className="waiting-dot" />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── Detected Identity Badge ────────────────────────────────── */}
-        {isConnected && remoteStream && liveDetection && detectedPerson && detectedPerson.name && (
-          <div style={{
-            position: "absolute",
-            top: "1.25rem",
-            right: "1.25rem",
-            background: "rgba(0, 0, 0, 0.6)",
-            backdropFilter: "blur(8px)",
-            padding: "0.5rem 0.875rem",
-            borderRadius: "0.5rem",
-            border: "1px solid rgba(255, 255, 255, 0.15)",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            zIndex: 15,
-            color: "#fff"
-          }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--success)", boxShadow: "0 0 5px var(--success)" }} />
-            <div>
-              <div style={{ fontSize: "0.8125rem", fontWeight: 700, lineHeight: 1.2 }}>{detectedPerson.name}</div>
-              {detectedPerson.relation && (
-                <div style={{ fontSize: "0.6875rem", color: "rgba(255,255,255,0.7)" }}>{detectedPerson.relation}</div>
-              )}
-            </div>
-            {liveDetection.confidence > 0 && (
-              <div style={{ marginLeft: "0.25rem", paddingLeft: "0.5rem", borderLeft: "1px solid rgba(255,255,255,0.2)", fontSize: "0.6875rem", opacity: 0.8 }}>
-                {Math.round(liveDetection.confidence * 100)}%
               </div>
             )}
           </div>

@@ -5,25 +5,24 @@
 
 import React, { useEffect, useRef, useCallback } from "react";
 import { sendSnapshotToML } from "../services/mlSnapshotService";
+import { useLiveDetection } from "../hooks/useLiveDetection";
+import { useSpacetimeTables } from "../hooks/useSpacetimeTables";
 
 interface SnapshotCaptureProps {
   active:          boolean;
   sessionId:       string | null;
-  /** Primary video element ID — falls back to "video-feed" (local cam) */
+  /** Primary video element ID to capture frames from */
   videoElementId?: string;
 }
 
 const SNAPSHOT_INTERVAL_MS = 5_000;
 
-/** Find the first video element that has actual frame data loaded. */
+/** Extract the video element by ID if it has actual frame data loaded. */
 function getActiveVideo(primaryId: string): HTMLVideoElement | null {
-  const check = (id: string): HTMLVideoElement | null => {
-    const el = document.getElementById(id) as HTMLVideoElement | null;
-    if (!el) return null;
-    if (el.readyState < 2 || el.videoWidth === 0 || el.videoHeight === 0) return null;
-    return el;
-  };
-  return check(primaryId) ?? check("video-feed") ?? null;
+  const el = document.getElementById(primaryId) as HTMLVideoElement | null;
+  if (!el) return null;
+  if (el.readyState < 2 || el.videoWidth === 0 || el.videoHeight === 0) return null;
+  return el;
 }
 
 const SnapshotCapture: React.FC<SnapshotCaptureProps> = ({
@@ -35,8 +34,25 @@ const SnapshotCapture: React.FC<SnapshotCaptureProps> = ({
   const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const countRef  = useRef(0);
 
+  const liveDetection = useLiveDetection(sessionId);
+  const { knownPersons } = useSpacetimeTables();
+  
+  const isUnknownPersonRef = useRef(false);
+  useEffect(() => {
+    if (!liveDetection?.personId) {
+      isUnknownPersonRef.current = false;
+      return;
+    }
+    const known = knownPersons.find(p => p.personId === liveDetection.personId);
+    isUnknownPersonRef.current = !known || !known.name;
+  }, [liveDetection, knownPersons]);
+
   const captureAndSend = useCallback(async () => {
     if (!sessionId) return;
+    if (isUnknownPersonRef.current) {
+      console.log("[Snapshot] Paused: Unknown person popup is open.");
+      return;
+    }
 
     const video  = getActiveVideo(videoElementId);
     const canvas = canvasRef.current;
