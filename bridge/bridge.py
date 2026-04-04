@@ -10,8 +10,10 @@ load_dotenv()
 # --- Configuration ---
 ML_API_URL = os.getenv("ML_API_URL", "https://wendell-unstacked-stupendously.ngrok-free.dev")
 SESSION_ID = "session_alpha_1"
-DB_NAME = "memorycare-bs4ml"
-SPACETIME_API = f"http://localhost:3000/v1/database/{DB_NAME}/call"
+
+# 🔥 UPDATED: Pointing directly to your live Testnet database
+DB_NAME = "tic-memorycare-live"
+SPACETIME_API = f"https://maincloud.spacetimedb.com/v1/database/{DB_NAME}/call"
 
 # State Tracking
 last_seen_id = None
@@ -70,6 +72,7 @@ async def handle_result(result: dict):
 
 async def run():
     print(f"🚀 [bridge] Listening - ML API: {ML_API_URL}")
+    print(f"☁️  [bridge] Connected to Live Database: {DB_NAME}")
 
     # timeout=None is critical here because Dev 1's endpoint blocks
     async with httpx.AsyncClient(timeout=None) as client:
