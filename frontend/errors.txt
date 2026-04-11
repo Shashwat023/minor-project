@@ -1,0 +1,6 @@
+﻿node_modules/@types/babel__generator/index.d.ts(1,12): error TS1005: ';' expected.
+node_modules/@types/babel__generator/index.d.ts(1,14): error TS1434: Unexpected keyword or identifier.
+node_modules/@types/babel__template/index.d.ts(1,1): error TS1435: Unknown keyword or identifier. Did you mean 'import'?
+node_modules/@types/babel__template/index.d.ts(1,25): error TS1434: Unexpected keyword or identifier.
+node_modules/@types/babel__traverse/index.d.ts(1,12): error TS1005: ';' expected.
+node_modules/@types/babel__traverse/index.d.ts(1,14): error TS1434: Unexpected keyword or identifier.

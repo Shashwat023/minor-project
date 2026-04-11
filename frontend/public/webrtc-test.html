@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebRTC Connectivity Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        #log { background: #f8f9fa; padding: 10px; border: 1px solid #dee2e6; height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>WebRTC Connectivity Diagnostic Tool</h1>
+    
+    <div class="test-section info">
+        <h3>Network Information</h3>
+        <div id="network-info"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>ICE Server Connectivity Test</h3>
+        <button onclick="testSTUN()">Test STUN Servers</button>
+        <button onclick="testTURN()">Test TURN Servers</button>
+        <div id="ice-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Connection Test</h3>
+        <button onclick="startConnectionTest()">Start Peer Connection Test</button>
+        <button onclick="stopConnectionTest()">Stop Test</button>
+        <div id="connection-status"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Debug Log</h3>
+        <div id="log"></div>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <script>
+        let pc = null;
+        let localStream = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        function updateNetworkInfo() {
+            const info = document.getElementById('network-info');
+            info.innerHTML = `
+                <p><strong>User Agent:</strong> ${navigator.userAgent}</p>
+                <p><strong>Online:</strong> ${navigator.onLine ? 'Yes' : 'No'}</p>
+                <p><strong>WebRTC Support:</strong> ${RTCPeerConnection ? 'Yes' : 'No'}</p>
+                <p><strong>Current URL:</strong> ${window.location.href}</p>
+            `;
+        }
+
+        async function testSTUN() {
+            log('Testing STUN servers...');
+            const results = document.getElementById('ice-results');
+            results.innerHTML = '<p>Testing STUN connectivity...</p>';
+
+            const stunServers = [
+                'stun:stun.l.google.com:19302',
+                'stun:stun1.l.google.com:19302',
+                'stun:stun.stunprotocol.org:3478',
+                'stun:stun.nextcloud.com:443'
+            ];
+
+            for (const stunUrl of stunServers) {
+                try {
+                    const pc = new RTCPeerConnection({ iceServers: [{ urls: stunUrl }] });
+                    
+                    const promise = new Promise((resolve, reject) => {
+                        const timeout = setTimeout(() => reject(new Error('Timeout')), 5000);
+                        
+                        pc.onicecandidate = (e) => {
+                            if (e.candidate && e.candidate.type === 'srflx') {
+                                clearTimeout(timeout);
+                                resolve(e.candidate);
+                            }
+                        };
+                        
+                        pc.createDataChannel('test');
+                        pc.createOffer().then(offer => pc.setLocalDescription(offer));
+                    });
+
+                    const candidate = await promise;
+                    log(`✅ ${stunUrl} - Public IP: ${candidate.address}`);
+                    results.innerHTML += `<p class="success">✅ ${stunUrl} - Public IP: ${candidate.address}</p>`;
+                    pc.close();
+                } catch (error) {
+                    log(`❌ ${stunUrl} - Error: ${error.message}`);
+                    results.innerHTML += `<p class="error">❌ ${stunUrl} - Error: ${error.message}</p>`;
+                }
+            }
+        }
+
+        async function testTURN() {
+            log('Testing TURN servers...');
+            const results = document.getElementById('ice-results');
+            results.innerHTML += '<p>Testing TURN connectivity...</p>';
+
+            const turnServers = [
+                {
+                    urls: 'turn:openrelay.metered.ca:80',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:turn.relay.metered.ca:80',
+                    username: 'relay',
+                    credential: 'relay'
+                },
+                {
+                    urls: 'turn:global.stun.twilio.com:3478?transport=udp',
+                    username: '',
+                    credential: ''
+                },
+                {
+                    urls: 'turn:stun.l.google.com:19302?transport=udp',
+                    username: '',
+                    credential: ''
+                }
+            ];
+
+            for (const turnConfig of turnServers) {
+                try {
+                    const pc = new RTCPeerConnection({ iceServers: [turnConfig] });
+                    
+                    const promise = new Promise((resolve, reject) => {
+                        const timeout = setTimeout(() => reject(new Error('Timeout')), 15000);
+                        
+                        pc.onicecandidate = (e) => {
+                            if (e.candidate && e.candidate.type === 'relay') {
+                                clearTimeout(timeout);
+                                resolve(e.candidate);
+                            }
+                        };
+                        
+                        pc.createDataChannel('test');
+                        pc.createOffer().then(offer => pc.setLocalDescription(offer));
+                    });
+
+                    const candidate = await promise;
+                    log(`✅ ${turnConfig.urls} - TURN relay working: ${candidate.address}`);
+                    results.innerHTML += `<p class="success">✅ ${turnConfig.urls} - TURN relay working: ${candidate.address || 'Success'}</p>`;
+                    pc.close();
+                } catch (error) {
+                    log(`❌ ${turnConfig.urls} - Error: ${error.message}`);
+                    results.innerHTML += `<p class="error">❌ ${turnConfig.urls} - Error: ${error.message}</p>`;
+                }
+            }
+        }
+
+        async function startConnectionTest() {
+            log('Starting connection test...');
+            const status = document.getElementById('connection-status');
+            status.innerHTML = '<p>Testing WebRTC connection with working servers...</p>';
+
+            try {
+                // Get user media
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                log('✅ Camera and microphone access granted');
+
+                // Create peer connection with only working servers
+                pc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: "stun:stun.l.google.com:19302" },
+                        { urls: "stun:stun1.l.google.com:19302" },
+                        { urls: "stun:stun.nextcloud.com:443" }
+                    ]
+                });
+                log('✅ Created peer connection with 3 working ICE servers');
+
+                // Add local stream
+                localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+                // Log ICE events
+                pc.onicecandidate = (e) => {
+                    if (e.candidate) {
+                        log(`🧊 ICE Candidate: ${e.candidate.type} ${e.candidate.protocol} ${e.candidate.address || ''}`);
+                    } else {
+                        log('🧊 ICE gathering complete');
+                    }
+                };
+
+                pc.oniceconnectionstatechange = () => {
+                    log(`🔗 ICE Connection State: ${pc.iceConnectionState}`);
+                    status.innerHTML = `<p>ICE Connection State: <strong>${pc.iceConnectionState}</strong></p>`;
+                };
+
+                pc.onconnectionstatechange = () => {
+                    log(`🔗 Connection State: ${pc.connectionState}`);
+                };
+
+                // Create offer to trigger ICE gathering
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                
+                log('✅ WebRTC connection test initiated');
+                status.innerHTML += '<p class="success">✅ WebRTC connection test initiated - check console logs</p>';
+
+            } catch (error) {
+                log(`❌ Connection test failed: ${error.message}`);
+                status.innerHTML = `<p class="error">❌ Connection test failed: ${error.message}</p>`;
+            }
+        }
+
+        function stopConnectionTest() {
+            if (pc) {
+                pc.close();
+                pc = null;
+                log('🛑 Peer connection closed');
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+                log('🛑 Media stream stopped');
+            }
+            document.getElementById('connection-status').innerHTML = '<p>Test stopped</p>';
+        }
+
+        // Initialize on page load
+        window.onload = () => {
+            updateNetworkInfo();
+            log('WebRTC Diagnostic Tool loaded');
+        };
+    </script>
+</body>
+</html>
