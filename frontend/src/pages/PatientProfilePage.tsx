@@ -143,7 +143,7 @@ const PatientProfilePage: React.FC = () => {
                   }}>
                     <div style={{
                       width: 36, height: 36, borderRadius: "50%",
-                      background: "var(--accent-dim)", border: "1px solid rgba(188,108,37,0.2)",
+                      background: "var(--accent-dim)", border: "1px solid rgba(123,143,255,0.2)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: "0.875rem", fontWeight: 700, color: "var(--accent-light)",
                     }}>

@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.py[cod]
 *.pyo
@@ -38,3 +38,10 @@ desktop.ini
 # Logs
 *.log
 logs/
+
+# Media and Large Files
+demo.mp4
+
+# Antigravity / Agents
+.agent/
+.gemini/

@@ -46,10 +46,11 @@ const PageLoader = () => (
   </div>
 );
 
-// Layout wrapper — hides nav/footer on Demo page (which has its own nav)
+// Layout wrapper — hides nav/footer on Demo page, footer on Landing
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const isDemoPage = location.pathname === "/demo";
+  const isLandingPage = location.pathname === "/";
 
   if (isDemoPage) {
     return <>{children}</>;
@@ -59,7 +60,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <>
       <Navbar />
       {children}
-      <Footer />
+      {!isLandingPage && <Footer />}
     </>
   );
 };

@@ -143,7 +143,7 @@ const InsightsPage: React.FC = () => (
                 <span key={kw} style={{
                   padding: "0.3rem 0.75rem",
                   background: i < 3 ? "var(--accent-dim)" : "var(--glass-2)",
-                  border: `1px solid ${i < 3 ? "rgba(188,108,37,0.2)" : "var(--glass-border)"}`,
+                  border: `1px solid ${i < 3 ? "rgba(123,143,255,0.2)" : "var(--glass-border)"}`,
                   borderRadius: "var(--radius-full)",
                   fontSize: "0.75rem",
                   color: i < 3 ? "var(--accent)" : "var(--text-3)",
@@ -165,7 +165,7 @@ const InsightsPage: React.FC = () => (
                   transition={{ duration: 0.5, delay: 0.5 + i * 0.04 }}
                   style={{
                     flex: 1,
-                    background: `linear-gradient(to top, rgba(34,197,94,0.3), var(--success))`,
+                    background: `linear-gradient(to top, rgba(74,222,128,0.2), var(--success))`,
                     borderRadius: "2px 2px 0 0",
                   }}
                 />

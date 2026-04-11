@@ -133,8 +133,8 @@ const Dashboard: React.FC = () => {
 
   // ── Start session ──────────────────────────────────────────────────────────
   const handleStartSession = useCallback(async () => {
-    // 🔥 FOR TESTING: Matching bridge.py's hardcoded SESSION_ID
-    const id = "session_alpha_1";
+    // Generate a unique session ID to prevent Redis cache leakage
+    const id = `session_${Date.now()}`;
 
     setSessionId(id);
     setIsSessionActive(true);
@@ -277,7 +277,7 @@ const Dashboard: React.FC = () => {
             <span style={{
               display: "inline-flex", alignItems: "center", gap: "0.45rem",
               padding: "0.3rem 0.875rem", borderRadius: "var(--radius-full)",
-              background: "var(--warning-dim)", border: "1px solid rgba(245,158,11,0.25)",
+              background: "var(--warning-dim)", border: "1px solid rgba(251,191,36,0.2)",
               fontSize: "0.75rem", fontWeight: 600, color: "var(--warning)",
             }}>
               <span className="dot dot-pending" style={{ width: 6, height: 6 }} />
@@ -289,7 +289,7 @@ const Dashboard: React.FC = () => {
             <span style={{
               display: "inline-flex", alignItems: "center", gap: "0.45rem",
               padding: "0.3rem 0.875rem", borderRadius: "var(--radius-full)",
-              background: "var(--success-dim)", border: "1px solid rgba(34,197,94,0.25)",
+              background: "var(--success-dim)", border: "1px solid rgba(74,222,128,0.2)",
               fontSize: "0.75rem", fontWeight: 600, color: "var(--success)",
             }}>
               <span className="dot dot-active" style={{ width: 6, height: 6 }} />

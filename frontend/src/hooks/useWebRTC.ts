@@ -133,7 +133,13 @@ export function useWebRTC(): UseWebRTCResult {
     // 1. Get camera + mic
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: true,
+      });
       localStreamRef.current = stream;
       setLocalStream(stream);
     } catch {

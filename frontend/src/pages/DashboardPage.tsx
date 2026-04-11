@@ -84,7 +84,7 @@ const DashboardPage: React.FC = () => {
                 padding: "0.3rem 0.875rem",
                 borderRadius: "9999px",
                 background: isLive ? "var(--success-dim)" : "var(--glass-2)",
-                border: `1px solid ${isLive ? "rgba(34,197,94,0.3)" : "var(--glass-border)"}`,
+                border: `1px solid ${isLive ? "rgba(74,222,128,0.3)" : "var(--glass-border)"}`,
                 fontSize: "0.6875rem", fontWeight: 700, letterSpacing: "0.06em",
                 textTransform: "uppercase",
                 color: isLive ? "var(--success)" : "var(--text-4)",

@@ -23,7 +23,7 @@ const AnimatedCard: React.FC<AnimatedCardProps> = ({
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true, margin: "-40px" }}
     transition={{ duration: 0.5, delay, ease: [0.4, 0, 0.2, 1] }}
-    whileHover={hoverable ? { y: -4, boxShadow: "0 12px 40px rgba(45,27,14,0.12)" } : undefined}
+    whileHover={hoverable ? { y: -4, boxShadow: "0 12px 40px rgba(0,0,0,0.3)" } : undefined}
   >
     {children}
   </motion.div>

@@ -1,222 +1,277 @@
 // frontend/src/pages/LandingPage.tsx
-// Premium landing page with parallax hero, animated headline, feature grid,
-// social proof stats, and CTA sections.
+// Immersive cinematic landing — the user scrolls THROUGH a 3D neural environment.
+// 4 Scenes: Fragmented Memory → AI Intervention → Structured Cognition → Continuous Care
+// The 3D frame sequence is a FIXED full-viewport background. Content floats above it.
 
-import React from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import ParallaxHero from "../components/ui/ParallaxHero";
-import AnimatedHeadline from "../components/ui/AnimatedHeadline";
-import SectionWrapper from "../components/ui/SectionWrapper";
-import FadeInSection from "../components/ui/FadeInSection";
-import AnimatedCard from "../components/ui/AnimatedCard";
-import StaggerContainer, { staggerItem } from "../components/ui/StaggerContainer";
-import GradientBorderCard from "../components/ui/GradientBorderCard";
-import FeatureCarousel from "../components/ui/FeatureCarousel";
+import { motion, useScroll, useTransform } from "framer-motion";
+import NeuralHero3D from "../components/ui/NeuralHero3D";
 
-const FEATURES = [
-  {
-    icon: "🎥",
-    iconClass: "",
-    title: "Real-Time Video Calls",
-    desc: "Secure, low-latency WebRTC video consultations between caregivers and patients — anytime, anywhere.",
-  },
-  {
-    icon: "🧠",
-    iconClass: "blue",
-    title: "AI-Powered Summaries",
-    desc: "Live conversation transcription and LLM-generated clinical summaries updated in real-time during calls.",
-  },
-  {
-    icon: "📸",
-    iconClass: "green",
-    title: "Visual Assessment",
-    desc: "Automated snapshot capture with ML analysis to track visual indicators and behavioral patterns.",
-  },
-  {
-    icon: "📊",
-    iconClass: "amber",
-    title: "Longitudinal Insights",
-    desc: "Session-over-session trend analysis to track cognitive and behavioral changes over time.",
-  },
-  {
-    icon: "🔒",
-    iconClass: "rose",
-    title: "Privacy-First Design",
-    desc: "End-to-end encrypted calls with HIPAA-conscious architecture. Data stays secure and controlled.",
-  },
-  {
-    icon: "👥",
-    iconClass: "",
-    title: "Multi-Caregiver Support",
-    desc: "Share session notes and insights across the entire care team for coordinated decision-making.",
-  },
-];
+// Total scroll height: 4 scenes × 100vh + buffer
+const SCENE_COUNT = 4;
+const TOTAL_HEIGHT_VH = SCENE_COUNT * 100;
 
-const TESTIMONIALS = [
-  {
-    quote: "MemoryCare transformed how our team coordinates care. The AI summaries save us hours of documentation.",
-    author: "Dr. Sarah Chen",
-    role: "Geriatric Specialist",
-  },
-  {
-    quote: "Being able to review past session insights gives us confidence in tracking progression patterns.",
-    author: "James Rodriguez",
-    role: "Family Caregiver",
-  },
-  {
-    quote: "The real-time summary feature is like having a clinical assistant in every consultation.",
-    author: "Dr. Priya Patel",
-    role: "Neurologist",
-  },
-];
-
-const LandingPage: React.FC = () => (
-  <div className="page-wrapper">
-    <div className="page-content">
-      {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <ParallaxHero>
-        <FadeInSection delay={0.1}>
-          <span className="hero-badge">
-            <span className="badge-dot" />
-            AI-Assisted Dementia Care
-          </span>
-        </FadeInSection>
-
-        <AnimatedHeadline
-          text="Compassionate care,"
-          className="hero-title"
-          delay={0.2}
-        />
-        <AnimatedHeadline
-          text="powered by AI."
-          className="hero-title"
-          gradient
-          delay={0.6}
-          as="h1"
-        />
-
-        <FadeInSection delay={0.9}>
-          <p className="hero-subtitle">
-            MemoryCare combines real-time video consultations with live AI-generated 
-            clinical summaries, helping caregivers deliver better outcomes through 
-            every interaction.
-          </p>
-        </FadeInSection>
-
-        <FadeInSection delay={1.1}>
-          <div className="hero-actions">
-            <Link to="/demo" className="btn btn-primary">
-              Start a Session
-            </Link>
-            <Link to="/how-it-works" className="btn btn-secondary">
-              How It Works
-            </Link>
-          </div>
-        </FadeInSection>
-
-        <FadeInSection delay={1.3}>
-          <div className="hero-stats">
-            <div className="hero-stat">
-              <div className="hero-stat-value">98%</div>
-              <div className="hero-stat-label">Summary Accuracy</div>
-            </div>
-            <div className="hero-stat">
-              <div className="hero-stat-value">&lt;2s</div>
-              <div className="hero-stat-label">Processing Latency</div>
-            </div>
-            <div className="hero-stat">
-              <div className="hero-stat-value">24/7</div>
-              <div className="hero-stat-label">Always Available</div>
-            </div>
-          </div>
-        </FadeInSection>
-      </ParallaxHero>
-
-      {/* ── Features ──────────────────────────────────────────────────── */}
-      <SectionWrapper
-        label="Features"
-        title="Everything you need for intelligent care"
-        description="A complete platform that augments human judgment with AI precision, designed specifically for dementia care professionals."
-      >
-        <StaggerContainer className="feature-grid" stagger={0.08}>
-          {FEATURES.map((f, i) => (
-            <motion.div key={i} variants={staggerItem}>
-              <AnimatedCard delay={0} hoverable>
-                <div className={`feature-icon ${f.iconClass}`}>{f.icon}</div>
-                <h3>{f.title}</h3>
-                <p>{f.desc}</p>
-              </AnimatedCard>
-            </motion.div>
-          ))}
-        </StaggerContainer>
-      </SectionWrapper>
-
-      {/* ── Testimonials Carousel ─────────────────────────────────────── */}
-      <SectionWrapper
-        label="Trusted by professionals"
-        title="What caregivers are saying"
-        description="Hear from the people who use MemoryCare every day to deliver better patient outcomes."
-      >
-        <FeatureCarousel>
-          {TESTIMONIALS.map((t, i) => (
-            <div key={i} className="carousel-item">
-              <GradientBorderCard delay={i * 0.1}>
-                <p style={{
-                  fontSize: "1.0625rem",
-                  color: "var(--text-2)",
-                  lineHeight: 1.7,
-                  marginBottom: "1.5rem",
-                  fontStyle: "italic",
-                }}>
-                  "{t.quote}"
-                </p>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: "50%",
-                    background: "var(--accent-dim)", border: "1px solid rgba(188,108,37,0.2)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: "1rem", fontWeight: 700, color: "var(--accent)",
-                  }}>
-                    {t.author[0]}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-1)" }}>
-                      {t.author}
-                    </div>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-4)" }}>
-                      {t.role}
-                    </div>
-                  </div>
-                </div>
-              </GradientBorderCard>
-            </div>
-          ))}
-        </FeatureCarousel>
-      </SectionWrapper>
-
-      {/* ── CTA ───────────────────────────────────────────────────────── */}
-      <div className="cta-section">
-        <FadeInSection>
-          <div className="cta-content">
-            <h2>Ready to transform dementia care?</h2>
-            <p>
-              Start your first AI-assisted session today. No setup required — 
-              just connect and let MemoryCare handle the rest.
-            </p>
-            <div className="hero-actions">
-              <Link to="/demo" className="btn btn-primary">
-                Try the Demo
-              </Link>
-              <Link to="/contact" className="btn btn-secondary">
-                Get in Touch
-              </Link>
-            </div>
-          </div>
-        </FadeInSection>
-      </div>
-    </div>
-  </div>
+// ── Fade-in helper ────────────────────────────────────────────────────────────
+const Reveal: React.FC<{
+  children: React.ReactNode;
+  delay?: number;
+  y?: number;
+  className?: string;
+  style?: React.CSSProperties;
+}> = ({ children, delay = 0, y = 30, className, style }) => (
+  <motion.div
+    initial={{ opacity: 0, y }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, amount: 0.5 }}
+    transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
+    className={className}
+    style={style}
+  >
+    {children}
+  </motion.div>
 );
+
+// ── Glass panel component ─────────────────────────────────────────────────────
+const GlassPanel: React.FC<{
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}> = ({ children, className = "", style }) => (
+  <motion.div
+    className={`immersive-glass ${className}`}
+    style={style}
+    initial={{ opacity: 0, y: 24, scale: 0.97 }}
+    whileInView={{ opacity: 1, y: 0, scale: 1 }}
+    viewport={{ once: true, amount: 0.4 }}
+    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+  >
+    {children}
+  </motion.div>
+);
+
+const LandingPage: React.FC = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scrollHeight, setScrollHeight] = useState(TOTAL_HEIGHT_VH * (window.innerHeight / 100));
+
+  // Recalculate on mount and resize
+  useEffect(() => {
+    const calc = () => {
+      if (containerRef.current) {
+        setScrollHeight(containerRef.current.scrollHeight);
+      }
+    };
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="immersive-landing">
+      {/* ═══ FIXED 3D NEURAL ENVIRONMENT ═══ */}
+      <NeuralHero3D scrollHeight={scrollHeight} />
+
+      {/* ═══ SCENE 1 — FRAGMENTED MEMORY ═══ */}
+      <section className="immersive-scene immersive-scene--1">
+        <div className="immersive-scene__content">
+          <Reveal delay={0.1}>
+            <span className="immersive-badge">
+              <span className="immersive-badge__dot" />
+              AI-Assisted Dementia Care
+            </span>
+          </Reveal>
+
+          <Reveal delay={0.25}>
+            <h1 className="immersive-title">
+              <span className="immersive-title__line">Compassionate care,</span>
+              <span className="immersive-title__line immersive-title__gradient">
+                powered by AI.
+              </span>
+            </h1>
+          </Reveal>
+
+          <Reveal delay={0.5}>
+            <p className="immersive-subtitle">
+              MemoryCare reconstructs fragmented cognitive patterns into
+              structured clinical understanding — in real-time.
+            </p>
+          </Reveal>
+
+          <Reveal delay={0.65}>
+            <div className="immersive-actions">
+              <Link to="/demo" className="btn btn-primary btn--glow">
+                Start a Session
+              </Link>
+              <Link to="/how-it-works" className="btn btn-secondary btn--glass">
+                How It Works
+              </Link>
+            </div>
+          </Reveal>
+
+          {/* Scroll indicator */}
+          <Reveal delay={1.0}>
+            <div className="immersive-scroll-hint">
+              <div className="immersive-scroll-hint__line" />
+              <span>Scroll to explore</span>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ═══ SCENE 2 — AI INTERVENTION ═══ */}
+      <section className="immersive-scene immersive-scene--2">
+        <div className="immersive-scene__content immersive-scene__content--left">
+          <Reveal>
+            <span className="immersive-scene-label">AI Intervention</span>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <h2 className="immersive-heading">
+              Neural pathways<br />begin forming.
+            </h2>
+          </Reveal>
+          <Reveal delay={0.2}>
+            <p className="immersive-body">
+              As conversations happen, our AI listens, transcribes, and begins
+              constructing cognitive maps from fragmented dialogue.
+            </p>
+          </Reveal>
+
+          <div className="immersive-panels">
+            <GlassPanel>
+              <div className="immersive-panel-icon">🎙️</div>
+              <h4>Real-Time Transcription</h4>
+              <p>
+                Live speech-to-text powered by Whisper, capturing every word
+                with clinical precision.
+              </p>
+            </GlassPanel>
+
+            <GlassPanel style={{ transitionDelay: "0.1s" }}>
+              <div className="immersive-panel-icon">🧠</div>
+              <h4>Cognitive Pattern Recognition</h4>
+              <p>
+                AI identifies behavioral markers, mood shifts, and memory
+                recall patterns as they emerge.
+              </p>
+            </GlassPanel>
+
+            <GlassPanel style={{ transitionDelay: "0.2s" }}>
+              <div className="immersive-panel-icon">📡</div>
+              <h4>Conversation Analysis</h4>
+              <p>
+                LLM-generated clinical summaries updated continuously throughout
+                every session.
+              </p>
+            </GlassPanel>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ SCENE 3 — STRUCTURED COGNITION ═══ */}
+      <section className="immersive-scene immersive-scene--3">
+        <div className="immersive-scene__content immersive-scene__content--right">
+          <Reveal>
+            <span className="immersive-scene-label">Structured Understanding</span>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <h2 className="immersive-heading">
+              Fragmented memories<br />become clinical insight.
+            </h2>
+          </Reveal>
+          <Reveal delay={0.2}>
+            <p className="immersive-body">
+              The neural network stabilizes. Scattered observations transform
+              into actionable medical intelligence.
+            </p>
+          </Reveal>
+
+          <div className="immersive-cards">
+            <GlassPanel className="immersive-card--wide">
+              <div className="immersive-card__header">
+                <div className="immersive-card__icon">📊</div>
+                <div>
+                  <h4>Clinical Summaries</h4>
+                  <p className="immersive-card__meta">AI-generated per session</p>
+                </div>
+              </div>
+              <p>
+                Comprehensive session notes synthesized from conversation,
+                visual assessment, and behavioral analysis.
+              </p>
+            </GlassPanel>
+
+            <div className="immersive-cards__row">
+              <GlassPanel>
+                <div className="immersive-card__icon">📈</div>
+                <h4>Longitudinal Trends</h4>
+                <p>Track cognitive changes across sessions,
+                  weeks, and months.</p>
+              </GlassPanel>
+
+              <GlassPanel>
+                <div className="immersive-card__icon">🔍</div>
+                <h4>Behavioral Detection</h4>
+                <p>Automated identification of agitation,
+                  confusion, and mood patterns.</p>
+              </GlassPanel>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ SCENE 4 — CONTINUOUS CARE ═══ */}
+      <section className="immersive-scene immersive-scene--4">
+        <div className="immersive-scene__content immersive-scene__content--center">
+          <Reveal>
+            <span className="immersive-scene-label">Continuous Intelligence</span>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <h2 className="immersive-heading immersive-heading--large">
+              Care that learns.<br />
+              <span className="immersive-title__gradient">Always.</span>
+            </h2>
+          </Reveal>
+          <Reveal delay={0.2}>
+            <p className="immersive-body" style={{ maxWidth: 520 }}>
+              Every session strengthens the network. MemoryCare delivers
+              continuous, evolving intelligence for the entire care team.
+            </p>
+          </Reveal>
+
+          <Reveal delay={0.35}>
+            <div className="immersive-stats">
+              <div className="immersive-stat">
+                <div className="immersive-stat__value">98%</div>
+                <div className="immersive-stat__label">Summary Accuracy</div>
+              </div>
+              <div className="immersive-stat">
+                <div className="immersive-stat__value">&lt;2s</div>
+                <div className="immersive-stat__label">Processing Latency</div>
+              </div>
+              <div className="immersive-stat">
+                <div className="immersive-stat__value">24/7</div>
+                <div className="immersive-stat__label">Always Available</div>
+              </div>
+            </div>
+          </Reveal>
+
+          <Reveal delay={0.5}>
+            <div className="immersive-actions immersive-actions--final">
+              <Link to="/demo" className="btn btn-primary btn--glow btn--lg">
+                Start a Session
+              </Link>
+              <Link to="/dashboard" className="btn btn-secondary btn--glass">
+                View Dashboard
+              </Link>
+              <Link to="/insights" className="btn btn-secondary btn--glass">
+                Explore Insights
+              </Link>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+    </div>
+  );
+};
 
 export default LandingPage;

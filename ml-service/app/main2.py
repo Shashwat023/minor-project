@@ -108,7 +108,7 @@ async def save_snapshot(req: SnapshotRequest):
 
         image_bytes = base64.b64decode(b64)
 
-        filename = f"{req.session_id}_snap{req.snapshot_number:04d}_{req.timestamp}.png"
+        filename = f"{req.session_id}_snap{req.snapshot_number:04d}_{req.timestamp}.jpg"
         save_path = _SNAP_DIR / filename
 
         save_path.write_bytes(image_bytes)

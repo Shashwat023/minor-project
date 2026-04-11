@@ -33,6 +33,11 @@ async def _process_audio_chunk(
     Both blocking steps run inside asyncio.to_thread — the event loop stays free.
     """
     try:
+        # Check if session is already ended before starting heavy lifting
+        if await redis_service.is_session_closed(session_id):
+            logger.warning(f"Aborting chunk {chunk_number} processing: session {session_id} is closed.")
+            return
+
         # ── Step 1: Whisper STT ─────────────────────────────────────────────
         transcribed_text = await whisper_service.transcribe(audio_bytes)
         

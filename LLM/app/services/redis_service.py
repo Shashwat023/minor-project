@@ -56,6 +56,11 @@ class RedisService:
 
         if self._connected:
             try:
+                # Check if session is closed before writing
+                if await self.is_session_closed(session_id):
+                    logger.warning(f"Aborting Redis write: session {session_id} is already closed.")
+                    return
+
                 async with self._client.pipeline(transaction=True) as pipe:
                     pipe.rpush(summaries_key, payload)
                     pipe.set(current_key, payload)
@@ -160,6 +165,33 @@ class RedisService:
         
         if removed_from_fallback > 0:
             logger.info(f"Cleaned up {removed_from_fallback} keys from fallback memory")
+
+    # ── session status ──────────────────────────────────────────────────────
+
+    async def set_session_closed(self, session_id: str) -> None:
+        """Mark a session as closed to prevent further chunk writes."""
+        closed_key = f"session:{session_id}:closed"
+        if self._connected:
+            try:
+                await self._client.set(closed_key, "1", ex=3600)  # Expires in 1 hour
+                logger.info(f"Session {session_id} marked as CLOSED in Redis")
+            except Exception as exc:
+                logger.error(f"Failed to set session closed: {exc}")
+        
+        # Also mark in fallback
+        self._fallback_current[closed_key] = "1"
+
+    async def is_session_closed(self, session_id: str) -> bool:
+        """Check if a session has been marked as closed."""
+        closed_key = f"session:{session_id}:closed"
+        if self._connected:
+            try:
+                return await self._client.exists(closed_key) > 0
+            except Exception as exc:
+                logger.error(f"Failed to check session closed: {exc}")
+                return False
+        
+        return self._fallback_current.get(closed_key) == "1"
 
     # ── session reset ───────────────────────────────────────────────────────
     

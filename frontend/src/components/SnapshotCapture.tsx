@@ -68,7 +68,7 @@ const SnapshotCapture: React.FC<SnapshotCaptureProps> = ({
     countRef.current += 1;
     const snapshotNumber = countRef.current;
     const timestamp      = Math.floor(Date.now() / 1000);
-    const b64            = canvas.toDataURL("image/png").split(",")[1];
+    const b64            = canvas.toDataURL("image/jpeg", 0.9).split(",")[1];
 
     console.log(`[Snapshot] #${snapshotNumber}  source="${video.id}"  ${canvas.width}×${canvas.height}`);
 

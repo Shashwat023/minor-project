@@ -89,6 +89,10 @@ async def end_session(body: SessionEndRequest) -> SessionEndResponse:
     sent_to_dev2 = False
 
     try:
+        # 0 — Mark session as closed instantly to block late audio chunks
+        await redis_service.set_session_closed(session_id)
+        logger.info(f"Session {session_id} closing...")
+
         # 1 — gather all chunk summaries
         all_summaries = await redis_service.get_all_summaries(session_id)
         texts = [s.text for s in all_summaries]

@@ -136,7 +136,7 @@ const GuestCall: React.FC<{ roomId: string }> = ({ roomId }) => {
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 1.25rem",
         borderBottom: "1px solid var(--glass-border)",
-        background: "rgba(254,250,224,0.95)",
+        background: "rgba(17,17,20,0.92)",
         backdropFilter: "blur(16px)",
         zIndex: 10,
       }}>
@@ -162,7 +162,7 @@ const GuestCall: React.FC<{ roomId: string }> = ({ roomId }) => {
           display: "flex", alignItems: "center", gap: "0.4rem",
           padding: "0.25rem 0.75rem", borderRadius: 9999,
           background: isConnected ? "var(--success-dim)" : "var(--glass-2)",
-          border: `1px solid ${isConnected ? "rgba(90,138,60,0.3)" : "var(--glass-border)"}`,
+          border: `1px solid ${isConnected ? "rgba(74,222,128,0.3)" : "var(--glass-border)"}`,
           fontSize: "0.6875rem", fontWeight: 700,
           letterSpacing: "0.06em", textTransform: "uppercase",
           color: s.color,
@@ -212,7 +212,7 @@ const GuestCall: React.FC<{ roomId: string }> = ({ roomId }) => {
             position: "absolute", inset: 0, zIndex: 2,
             display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center", gap: "1.25rem",
-            background: "radial-gradient(ellipse at 50% 55%, rgba(188,108,37,0.07) 0%, transparent 70%), var(--bg-base)",
+            background: "radial-gradient(ellipse at 50% 55%, rgba(123,143,255,0.05) 0%, transparent 70%), var(--bg-base)",
             padding: "1.5rem",
           }}>
             <div style={{
@@ -253,8 +253,8 @@ const GuestCall: React.FC<{ roomId: string }> = ({ roomId }) => {
           aspectRatio: "16/9",
           borderRadius: 10, overflow: "hidden",
           border: "2px solid rgba(255,255,255,0.18)",
-          boxShadow: "0 4px 24px rgba(45,27,14,0.25)",
-          background: "#1a1308", zIndex: 10,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.35)",
+          background: "#0b0b0c", zIndex: 10,
           opacity: localStream ? 1 : 0,
           transition: "opacity 0.3s ease",
         }}>
@@ -287,7 +287,7 @@ const GuestCall: React.FC<{ roomId: string }> = ({ roomId }) => {
         display: "flex", alignItems: "center", justifyContent: "center",
         gap: "0.875rem",
         padding: "0 1.5rem",
-        background: "rgba(254,250,224,0.97)",
+        background: "rgba(17,17,20,0.95)",
         backdropFilter: "blur(16px)",
         borderTop: "1px solid var(--glass-border)",
         zIndex: 10,
