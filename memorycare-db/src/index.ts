@@ -484,11 +484,25 @@ export const addMedication = spacetimedb.reducer(
     ctx.db.medication.insert({
       medicationId, medicineName, dose, triggerTime, status: "pending", createdAt: nowMs(),
     });
-    ctx.db.medicationSchedule.insert({
-      scheduledId: 0n,
-      scheduledAt: triggerTime,
-      medicationId,
+    // Create a notification so medication appears in notification feed
+    ctx.db.notification.insert({
+      notificationId: `notif_${shortId()}`,
+      type: "medication_scheduled",
+      personId: "",
+      message: `Medication scheduled: ${medicineName} ${dose}`,
+      isRead: false,
+      createdAt: nowMs(),
     });
+    // Try scheduler insert — if it fails, medication still exists
+    try {
+      ctx.db.medicationSchedule.insert({
+        scheduledId: 0n,
+        scheduledAt: triggerTime,
+        medicationId,
+      });
+    } catch (e) {
+      // Scheduler insert may fail if time is in the past; medication is still tracked
+    }
   }
 );
 
@@ -515,6 +529,15 @@ export const markMedicationTaken = spacetimedb.reducer(
     const med = ctx.db.medication.medicationId.find(medicationId);
     if (!med) return;
     ctx.db.medication.medicationId.update({ ...med, status: "taken" });
+    // Push notification when medication is marked as taken
+    ctx.db.notification.insert({
+      notificationId: `notif_${shortId()}`,
+      type: "medication_taken",
+      personId: "",
+      message: `✅ ${med.medicineName} ${med.dose} marked as taken`,
+      isRead: false,
+      createdAt: nowMs(),
+    });
   }
 );
 

@@ -27,12 +27,11 @@ const AboutPage = lazy(() => import("./pages/AboutPage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
 
-// Feature modules
+// Newly built microservice views
 const AnalyticsDashboard = lazy(() => import("./features/analytics/AnalyticsDashboard"));
 const CognitiveQuizWidget = lazy(() => import("./features/cognitive-quiz/CognitiveQuizWidget"));
 const MedicationManager = lazy(() => import("./features/medication/MedicationManager"));
 const GeoTracker = lazy(() => import("./features/geolocation/GeoTracker"));
-
 // Loading fallback
 const PageLoader = () => (
   <div style={{
@@ -53,11 +52,10 @@ const PageLoader = () => (
   </div>
 );
 
-// Layout wrapper — hides nav/footer on Demo page, footer on Landing
+// Layout wrapper — hides nav/footer on Demo page (which has its own nav)
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const isDemoPage = location.pathname === "/demo";
-  const isLandingPage = location.pathname === "/";
 
   if (isDemoPage) {
     return <>{children}</>;
@@ -68,7 +66,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <Navbar />
       {children}
       <NotificationBell />
-      {!isLandingPage && <Footer />}
+      <Footer />
     </>
   );
 };
@@ -88,18 +86,18 @@ const AppRoutes: React.FC = () => (
         <Route path="/about" element={<AboutPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/contact" element={<ContactPage />} />
-
+        
         {/* Feature Routes */}
         <Route path="/testing-analytics" element={<AnalyticsDashboard />} />
         <Route path="/quiz" element={
-          <div style={{ padding: "100px 50px 50px", background: "#0d0d14", minHeight: "100vh", display: "flex", alignItems: "center" }}>
+          <div style={{ padding: "50px", background: "#0d0d14", minHeight: "100vh", display: "flex", alignItems: "center" }}>
             <div style={{ width: "100%" }}>
               <CognitiveQuizWidget />
             </div>
           </div>
         } />
         <Route path="/testing-quiz" element={
-          <div style={{ padding: "100px 50px 50px", background: "#0d0d14", minHeight: "100vh", display: "flex", alignItems: "center" }}>
+          <div style={{ padding: "50px", background: "#0d0d14", minHeight: "100vh", display: "flex", alignItems: "center" }}>
             <div style={{ width: "100%" }}>
               <CognitiveQuizWidget />
             </div>

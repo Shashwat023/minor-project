@@ -38,7 +38,7 @@
   flex-direction: column;
   align-items: center;
   gap: 0.625rem;
-  opacity: 0.4;
+  opacity: 0.9;
 }
 
 .neural-env__loader-track {
@@ -51,14 +51,14 @@
 
 .neural-env__loader-fill {
   height: 100%;
-  background: rgba(123, 143, 255, 0.45);
+  background: rgba(123, 143, 255, 0.9);
   border-radius: 1px;
   transition: width 0.3s ease;
 }
 
 .neural-env__loader-text {
   font-size: 0.625rem;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.85);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 500;

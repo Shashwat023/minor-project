@@ -14,7 +14,7 @@ interface QuestionDef {
   d: string[]; // distractors
   type: "episodic" | "personalized";
   difficulty: "L1" | "L2" | "L3" | "High-Precision";
-  weight: number; 
+  weight: number;
 }
 
 const EPISODIC_QUESTIONS: QuestionDef[] = [
@@ -49,85 +49,96 @@ function generateQuestion(usedQuestions: Set<string>) {
   }
 
   const options = [qDef.a, ...qDef.d].sort(() => 0.5 - Math.random());
-  
-  return { 
-    questionText: qDef.q, 
-    correctAnswer: qDef.a, 
-    options, 
-    meta: qDef 
+
+  return {
+    questionText: qDef.q,
+    correctAnswer: qDef.a,
+    options,
+    meta: qDef
   };
 }
 
 export default function CognitiveQuizWidget() {
   const TOTAL_QUESTIONS = 5;
-  const PATIENT_ID = "patient_001"; // Pulled from global context usually
+  const PATIENT_ID = "patient_001";
 
   const { conn } = useSpacetime();
+
+  // ── Quiz lifecycle: idle → active → finished ──
+  const [quizState, setQuizState] = useState<'idle' | 'active' | 'finished'>('idle');
 
   const [currentQIndex, setCurrentQIndex] = useState(0);
   const [usedQuestions, setUsedQuestions] = useState<Set<string>>(new Set());
   const [quizData, setQuizData] = useState(() => generateQuestion(new Set()));
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  
+
   // Real-time Timer states
   const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
   const [liveTimerMs, setLiveTimerMs] = useState(0);
-  const [answersLog, setAnswersLog] = useState<{correct: boolean, timeMs: number, meta: QuestionDef}[]>([]);
-  const [isFinished, setIsFinished] = useState(false);
+  const [answersLog, setAnswersLog] = useState<{ correct: boolean, timeMs: number, meta: QuestionDef }[]>([]);
   const [hasLoggedToDB, setHasLoggedToDB] = useState(false);
 
-  // Live Timer Effect
+  // Live Timer Effect — only runs when quiz is active
   useEffect(() => {
     let timerId: ReturnType<typeof setInterval>;
-    if (!selectedOption && !isFinished) {
+    if (quizState === 'active' && !selectedOption) {
       setQuestionStartTime(Date.now());
       timerId = setInterval(() => {
         setLiveTimerMs(Date.now() - questionStartTime);
       }, 50);
     }
     return () => clearInterval(timerId);
-  }, [quizData, selectedOption, isFinished]); // Restart tracking per question
+  }, [quizData, selectedOption, quizState]);
 
   const { questionText, correctAnswer, options, meta } = quizData;
 
+  const handleStartQuiz = () => {
+    setQuizState('active');
+    setCurrentQIndex(0);
+    setUsedQuestions(new Set());
+    setQuizData(generateQuestion(new Set()));
+    setSelectedOption(null);
+    setAnswersLog([]);
+    setHasLoggedToDB(false);
+    setLiveTimerMs(0);
+    setQuestionStartTime(Date.now());
+  };
+
   const handleSelect = (option: string) => {
-    if (selectedOption) return; 
-    
+    if (selectedOption || quizState !== 'active') return;
+
     const timeTaken = Date.now() - questionStartTime;
     const isCorrect = option === correctAnswer;
-    
+
     setSelectedOption(option);
-    
+
     setTimeout(() => {
       setAnswersLog(prev => [...prev, { correct: isCorrect, timeMs: timeTaken, meta }]);
-      
+
       const newUsed = new Set(usedQuestions);
       newUsed.add(questionText);
       setUsedQuestions(newUsed);
 
       if (currentQIndex + 1 >= TOTAL_QUESTIONS) {
-        setIsFinished(true);
+        setQuizState('finished');
       } else {
         setCurrentQIndex(prev => prev + 1);
         setSelectedOption(null);
         setQuizData(generateQuestion(newUsed));
       }
-    }, 1500); 
+    }, 1500);
   };
 
-  // ----------------------------------------------------------------------
-  // SPACETIMEDB PUSH MECHANISM
-  // ----------------------------------------------------------------------
+  // SPACETIMEDB PUSH — only runs once when quiz finishes
   useEffect(() => {
-    if (isFinished && !hasLoggedToDB) {
-      // 1. Calculate Outputs exactly as we did in the UI
+    if (quizState === 'finished' && !hasLoggedToDB && answersLog.length === TOTAL_QUESTIONS) {
       let totalWeight = 0; let earnedWeight = 0;
       answersLog.forEach(ans => { totalWeight += ans.meta.weight; if (ans.correct) earnedWeight += ans.meta.weight; });
       const weightedAccuracy = Math.round((earnedWeight / totalWeight) * 100) || 0;
 
       let totalSpeedScore = 0;
       answersLog.forEach(ans => {
-        let baseMs = 4000; 
+        let baseMs = 4000;
         if (ans.meta.difficulty === "L3") baseMs = 6000;
         if (ans.meta.difficulty === "High-Precision") baseMs = 8000;
         let speedPct = 100 - ((ans.timeMs - baseMs) / baseMs) * 50;
@@ -136,23 +147,16 @@ export default function CognitiveQuizWidget() {
       const speed = Math.round(totalSpeedScore / TOTAL_QUESTIONS);
       const composite = Math.round((weightedAccuracy * 0.7) + (speed * 0.3));
 
-      // 2. Perform push to SpacetimeDB
       console.log(`[SPACETIMEDB PIPELINE] Sending Diagnostic Record for ${PATIENT_ID}...`, {
-        patientId: PATIENT_ID,
-        accuracyScore: weightedAccuracy,
-        speedScore: speed,
-        averageScore: composite,
-        questionsTaken: TOTAL_QUESTIONS
+        patientId: PATIENT_ID, accuracyScore: weightedAccuracy, speedScore: speed,
+        averageScore: composite, questionsTaken: TOTAL_QUESTIONS
       });
 
       try {
         if (conn) {
-          conn.reducers.logQuizSession({ 
-            patientId: PATIENT_ID, 
-            accuracyScore: weightedAccuracy, 
-            speedScore: speed, 
-            averageScore: composite, 
-            questionsTaken: TOTAL_QUESTIONS 
+          conn.reducers.logQuizSession({
+            patientId: PATIENT_ID, accuracyScore: weightedAccuracy,
+            speedScore: speed, averageScore: composite, questionsTaken: TOTAL_QUESTIONS
           });
         } else {
           console.warn("SpacetimeDB context missing or disconnected! Cannot log quiz.");
@@ -163,7 +167,7 @@ export default function CognitiveQuizWidget() {
 
       setHasLoggedToDB(true);
     }
-  }, [isFinished, answersLog]);
+  }, [quizState, answersLog, hasLoggedToDB]);
 
   const S: Record<string, React.CSSProperties> = {
     card: { background: "#13131f", border: "1px solid #1e1e30", borderRadius: 24, padding: "40px", maxWidth: 600, width: "100%", margin: "40px auto", fontFamily: "Inter, system-ui, sans-serif", color: "#e2e8f0", boxShadow: "0 20px 50px rgba(0,0,0,0.8)", textAlign: "center" as const },
@@ -187,21 +191,55 @@ export default function CognitiveQuizWidget() {
   }
 
   function getTagColor(type: string) {
-    if (type === 'personalized') return { bg: '#4c1d95', text: '#ddd6fe' }; 
-    return { bg: '#064e3b', text: '#a7f3d0' }; 
+    if (type === 'personalized') return { bg: '#4c1d95', text: '#ddd6fe' };
+    return { bg: '#064e3b', text: '#a7f3d0' };
   }
 
-  // ----------------------------------------------------------------------
-  // FINISHED DIAGNOSTIC SCORECARD
-  // ----------------------------------------------------------------------
-  if (isFinished) {
+  // ── IDLE STATE: Start button ──────────────────────────────────────────
+  if (quizState === 'idle') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        style={S.card}
+      >
+        <div style={{ fontSize: 64, marginBottom: 20 }}>🧠</div>
+        <div style={{ fontSize: 24, fontWeight: 700, color: '#f8fafc', marginBottom: 12 }}>
+          Daily Cognitive Quiz
+        </div>
+        <div style={{ fontSize: 15, color: '#94a3b8', marginBottom: 32, lineHeight: 1.6 }}>
+          Test your memory and cognitive speed with {TOTAL_QUESTIONS} clinically-weighted questions.
+          <br />Results are logged to your health dashboard for tracking.
+        </div>
+        <button
+          onClick={handleStartQuiz}
+          style={{
+            ...S.button,
+            background: 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%)',
+            color: '#fff',
+            border: '1px solid #7c3aed',
+            fontSize: 18,
+            padding: '18px 48px',
+            borderRadius: 14,
+            boxShadow: '0 8px 24px rgba(76, 29, 149, 0.4)',
+          }}
+        >
+          ▶ Start Quiz
+        </button>
+      </motion.div>
+    );
+  }
+
+  // ── FINISHED STATE: Diagnostic Scorecard ──────────────────────────────
+  if (quizState === 'finished') {
     let totalWeight = 0; let earnedWeight = 0;
     answersLog.forEach(ans => { totalWeight += ans.meta.weight; if (ans.correct) earnedWeight += ans.meta.weight; });
     const weightedAccuracy = Math.round((earnedWeight / totalWeight) * 100) || 0;
 
     let totalSpeedScore = 0;
     answersLog.forEach(ans => {
-      let baseMs = 4000; 
+      let baseMs = 4000;
       if (ans.meta.difficulty === "L3") baseMs = 6000;
       if (ans.meta.difficulty === "High-Precision") baseMs = 8000;
       let speedPercentage = 100 - ((ans.timeMs - baseMs) / baseMs) * 50;
@@ -211,55 +249,64 @@ export default function CognitiveQuizWidget() {
     const composite = Math.round((weightedAccuracy * 0.7) + (speed * 0.3));
 
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
         style={S.card}
       >
-        <div style={{...S.header, justifyContent: 'center'}}>🧠 Diagnostic Complete</div>
-        <div style={{ ...S.question, fontSize: 24, marginBottom: 40, color: '#f8fafc'}}>Great work today! Your neural data is logged.</div>
-        
+        <div style={{ ...S.header, justifyContent: 'center' }}>🧠 Diagnostic Complete</div>
+        <div style={{ ...S.question, fontSize: 24, marginBottom: 40, color: '#f8fafc' }}>Great work today! Your neural data is logged.</div>
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
           <div style={S.resultBox}>
-            <div style={{textAlign: 'left'}}>
+            <div style={{ textAlign: 'left' }}>
               <div style={S.metricLabel}>Weighted Accuracy</div>
-              <div style={{...S.metricValue, color: weightedAccuracy > 70 ? '#10b981' : '#f59e0b'}}>{weightedAccuracy}%</div>
-              <div style={{fontSize: 12, color: '#64748b', marginTop: 8}}>Based on Clinical Anchors</div>
+              <div style={{ ...S.metricValue, color: weightedAccuracy > 70 ? '#10b981' : '#f59e0b' }}>{weightedAccuracy}%</div>
+              <div style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>Based on Clinical Anchors</div>
             </div>
-            <div style={{textAlign: 'right'}}>
+            <div style={{ textAlign: 'right' }}>
               <div style={S.metricLabel}>Cognitive Speed</div>
-              <div style={{...S.metricValue, color: speed > 60 ? '#3b82f6' : '#f59e0b'}}>{speed}</div>
-              <div style={{fontSize: 12, color: '#64748b', marginTop: 8}}>Normalized to Difficulty</div>
+              <div style={{ ...S.metricValue, color: speed > 60 ? '#3b82f6' : '#f59e0b' }}>{speed}</div>
+              <div style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>Normalized to Difficulty</div>
             </div>
           </div>
-          
-          <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }} 
-            animate={{ scale: 1, opacity: 1 }} 
+
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.3, type: "spring" }}
             style={{ ...S.resultBox, background: 'linear-gradient(135deg, #2e1065 0%, #4c1d95 100%)', border: '1px solid #7c3aed', flexDirection: 'column', alignItems: 'center', padding: 40, boxShadow: '0 10px 30px rgba(76, 29, 149, 0.4)' }}
           >
-            <div style={{...S.metricLabel, color: '#ddd6fe'}}>Overall Health Composite</div>
-            <div style={{...S.metricValue, color: '#fff', fontSize: 72}}>{composite}</div>
+            <div style={{ ...S.metricLabel, color: '#ddd6fe' }}>Overall Health Composite</div>
+            <div style={{ ...S.metricValue, color: '#fff', fontSize: 72 }}>{composite}</div>
           </motion.div>
         </div>
 
-        <button style={{ ...S.button, marginTop: 40, background: '#a78bfa', color: '#13131f', borderColor: '#a78bfa' }} onClick={() => window.location.reload()}>
-          Complete Session
-        </button>
+        <div style={{ display: 'flex', gap: 12, marginTop: 40 }}>
+          <button
+            style={{ ...S.button, flex: 1, background: '#a78bfa', color: '#13131f', borderColor: '#a78bfa' }}
+            onClick={handleStartQuiz}
+          >
+            🔄 Take Another Quiz
+          </button>
+          <button
+            style={{ ...S.button, flex: 1, background: 'transparent', color: '#94a3b8', borderColor: '#2d2d44' }}
+            onClick={() => setQuizState('idle')}
+          >
+            Done
+          </button>
+        </div>
       </motion.div>
     )
   }
 
+  // ── ACTIVE STATE: Questions ───────────────────────────────────────────
   const activeTagColors = getTagColor(meta.type);
 
-  // ----------------------------------------------------------------------
-  // QUIZ VIEW
-  // ----------------------------------------------------------------------
   return (
-    <motion.div 
-      key={currentQIndex} // Trigger re-animation per question
+    <motion.div
+      key={currentQIndex}
       initial={{ x: 30, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: -30, opacity: 0 }}
@@ -271,32 +318,32 @@ export default function CognitiveQuizWidget() {
           button:hover:not(:disabled) { border-color: #a78bfa !important; background: #2e1065 !important; transform: translateY(-2px); }
         `}
       </style>
-      
+
       <div style={S.header}>
-        <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={S.timerPill}>⏱️ {(liveTimerMs / 1000).toFixed(1)}s</span>
         </div>
         <div style={{ color: '#64748b', fontSize: 13 }}>{currentQIndex + 1} / {TOTAL_QUESTIONS}</div>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 24 }}>
-        <span style={{...S.tag, background: activeTagColors.bg, color: activeTagColors.text, border: 'none'}}>
+        <span style={{ ...S.tag, background: activeTagColors.bg, color: activeTagColors.text, border: 'none' }}>
           {meta.type.toUpperCase()} MEMORY
         </span>
-        <span style={{...S.tag, background: '#1e1e30', color: '#94a3b8', border: 'none'}}>
+        <span style={{ ...S.tag, background: '#1e1e30', color: '#94a3b8', border: 'none' }}>
           {meta.difficulty.toUpperCase()}
         </span>
       </div>
-      
+
       <div style={S.question}>{questionText}</div>
-      
+
       <div style={S.optionsContainer}>
         <AnimatePresence>
           {options.map((opt, idx) => (
-            <motion.button 
+            <motion.button
               whileTap={{ scale: selectedOption ? 1 : 0.98 }}
-              key={idx} 
-              style={getButtonStyle(opt)} 
+              key={idx}
+              style={getButtonStyle(opt)}
               onClick={() => handleSelect(opt)}
               disabled={selectedOption !== null}
             >
@@ -307,7 +354,7 @@ export default function CognitiveQuizWidget() {
       </div>
 
       {selectedOption && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           style={{
             ...S.feedbackBox,
@@ -316,8 +363,8 @@ export default function CognitiveQuizWidget() {
             border: `1px solid ${selectedOption === correctAnswer ? "#10b981" : "#ef4444"}`
           }}
         >
-          {selectedOption === correctAnswer 
-            ? "Excellent! Spot on." 
+          {selectedOption === correctAnswer
+            ? "Excellent! Spot on."
             : `Not quite! The correct answer is "${correctAnswer}". Good try!`}
         </motion.div>
       )}

@@ -3,19 +3,20 @@
 // and POSTs it as base64 PNG to ml-service via the /ml/snapshot Vite proxy.
 // Saved on disk: ml-service/client_snaps/{session_id}_snap{N:04d}_{ts}.png
 
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useRef, useCallback, useImperativeHandle, forwardRef } from "react";
 import { sendSnapshotToML } from "../services/mlSnapshotService";
 import { useLiveDetection } from "../hooks/useLiveDetection";
 import { useSpacetimeTables } from "../hooks/useSpacetimeTables";
 
+export interface SnapshotCaptureRef {
+  captureNow: () => Promise<void>;
+}
+
 interface SnapshotCaptureProps {
-  active:          boolean;
   sessionId:       string | null;
   /** Primary video element ID to capture frames from */
   videoElementId?: string;
 }
-
-const SNAPSHOT_INTERVAL_MS = 5_000;
 
 /** Extract the video element by ID if it has actual frame data loaded. */
 function getActiveVideo(primaryId: string): HTMLVideoElement | null {
@@ -25,20 +26,18 @@ function getActiveVideo(primaryId: string): HTMLVideoElement | null {
   return el;
 }
 
-const SnapshotCapture: React.FC<SnapshotCaptureProps> = ({
-  active,
+const SnapshotCapture = forwardRef<SnapshotCaptureRef, SnapshotCaptureProps>(({
   sessionId,
   videoElementId = "video-remote",
-}) => {
+}, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const countRef  = useRef(0);
 
   const liveDetection = useLiveDetection(sessionId);
   const { knownPersons } = useSpacetimeTables();
-  
+
   const isUnknownPersonRef = useRef(false);
-  useEffect(() => {
+  const checkUnknownPerson = useCallback(() => {
     if (!liveDetection?.personId) {
       isUnknownPersonRef.current = false;
       return;
@@ -49,6 +48,7 @@ const SnapshotCapture: React.FC<SnapshotCaptureProps> = ({
 
   const captureAndSend = useCallback(async () => {
     if (!sessionId) return;
+    checkUnknownPerson();
     if (isUnknownPersonRef.current) {
       console.log("[Snapshot] Paused: Unknown person popup is open.");
       return;
@@ -100,22 +100,14 @@ const SnapshotCapture: React.FC<SnapshotCaptureProps> = ({
     } catch (err) {
       console.error("[Snapshot] request failed:", err);
     }
-  }, [sessionId, videoElementId]);
+  }, [sessionId, videoElementId, checkUnknownPerson]);
 
-  useEffect(() => {
-    if (active) {
-      countRef.current = 0;
-      captureAndSend(); // immediate first capture
-      timerRef.current = setInterval(captureAndSend, SNAPSHOT_INTERVAL_MS);
-    } else {
-      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    }
-    return () => {
-      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    };
-  }, [active, captureAndSend]);
+  // Expose captureNow for manual triggering via Recognize button
+  useImperativeHandle(ref, () => ({
+    captureNow: captureAndSend,
+  }));
 
   return <canvas ref={canvasRef} style={{ display: "none" }} aria-hidden="true" />;
-};
+});
 
 export default SnapshotCapture;

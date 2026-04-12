@@ -15,7 +15,7 @@ import { Link } from "react-router-dom";
 import VoiceRecorder from "./VoiceRecorder";
 import LiveSummaryBlock from "./LiveSummaryBlock";
 import VideoFeed from "./VideoFeed";
-import SnapshotCapture from "./SnapshotCapture";
+import SnapshotCapture, { SnapshotCaptureRef } from "./SnapshotCapture";
 import FaceDisplay from "./FaceDisplay";
 import { useLiveRedis } from "../hooks/useLiveRedis";
 import { useVoiceRecorder } from "../hooks/useVoiceRecorder";
@@ -56,12 +56,17 @@ function callReducer(fn: () => void, label: string) {
   }
 }
 
+const COOLDOWN_MS = 10_000;
+
 const Dashboard: React.FC = () => {
   const [selectedClientId, setSelectedClientId] = useState(CLIENTS[0].id);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [finalSummary, setFinalSummary] = useState<SessionEndResponse | null>(null);
   const [errorToast, setErrorToast] = useState<string | null>(null);
+  const [recognizeCooldown, setRecognizeCooldown] = useState(0);
+
+  const snapshotRef = useRef<SnapshotCaptureRef>(null);
 
   // ── Hooks ──────────────────────────────────────────────────────────────────
   const { conn: stdbConn, isConnected: stdbConnected } = useSpacetime();
@@ -200,6 +205,21 @@ const Dashboard: React.FC = () => {
     setSessionId(null);
   }, []);
 
+  const handleRecognize = useCallback(async () => {
+    if (recognizeCooldown > 0 || !snapshotRef.current) return;
+    await snapshotRef.current.captureNow();
+    setRecognizeCooldown(COOLDOWN_MS / 1000);
+  }, [recognizeCooldown]);
+
+  // Cooldown countdown effect
+  useEffect(() => {
+    if (recognizeCooldown <= 0) return;
+    const timer = setTimeout(() => {
+      setRecognizeCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [recognizeCooldown]);
+
   const waitingForClient = isSessionActive && callStatus !== "connected" && callStatus !== "idle";
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -334,12 +354,23 @@ const Dashboard: React.FC = () => {
               timestamp={timestamp}
               isPolling={isPolling}
             />
+
+            {clientConnected && (
+              <button
+                className="btn btn-secondary"
+                onClick={handleRecognize}
+                disabled={recognizeCooldown > 0}
+                style={{ marginTop: "0.75rem", width: "100%" }}
+              >
+                {recognizeCooldown > 0 ? `Recognize (${recognizeCooldown}s)` : "Recognize"}
+              </button>
+            )}
           </div>
         </div>
       </main>
 
       <SnapshotCapture
-        active={isSessionActive && clientConnected}
+        ref={snapshotRef}
         sessionId={sessionId}
         videoElementId="video-remote"
       />
