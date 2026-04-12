@@ -42,8 +42,12 @@ export function StatusCards({ quizCount, latestComposite, medAdherence, sentimen
 // ─────────────────────────────────────────────────────────────────────────────
 // AGITATION HEATMAP (kept as-is — excellent clinical visual)
 // ─────────────────────────────────────────────────────────────────────────────
-export function AgitationHeatmap({ data }: { data: any[] }) {
+export function AgitationHeatmap({ data }: { data: { day: string; hour: number; count: number; label: string }[] }) {
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  
+  // Find max count for normalization
+  const maxCount = Math.max(...data.map(d => d.count), 1); // avoid division by zero
+  
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%', overflowX: 'auto' }}>
       <div style={{ display: 'flex', marginLeft: 40 }}>
@@ -58,18 +62,45 @@ export function AgitationHeatmap({ data }: { data: any[] }) {
             <div style={{ width: 40, fontSize: 12, color: '#94a3b8' }}>{day}</div>
             <div style={{ display: 'flex', flex: 1, gap: 2 }}>
               {dayData.map((d) => {
-                 let color = "#1e1e30";
-                 if (d.value > 0.8) color = "#ef4444";
-                 else if (d.value > 0.5) color = "#f59e0b";
-                 else if (d.value > 0.2) color = "#10b981";
+                 // Color based on fixed count ranges
+                 let color = "#1e1e30"; // empty/default
+                 let textColor = "transparent";
+                 if (d.count === 0) {
+                   color = "#1e1e30";
+                 } else if (d.count >= 1 && d.count <= 2) {
+                   color = "#6ee7b7"; // light green
+                   textColor = "#064e3b";
+                 } else if (d.count >= 3 && d.count <= 5) {
+                   color = "#059669"; // dark green
+                   textColor = "#fff";
+                 } else if (d.count >= 6) {
+                   color = "#ef4444"; // red
+                   textColor = "#fff";
+                 }
+                 
                  return (
                    <div 
                      key={d.hour} 
-                     title={d.label + ` (Severity: ${d.value})`} 
-                     style={{ flex: 1, height: 24, borderRadius: 4, background: color, transition: 'all 0.2s', cursor: 'crosshair' }}
+                     title={d.label + ` (Count: ${d.count})`} 
+                     style={{ 
+                       flex: 1, 
+                       height: 24, 
+                       borderRadius: 4, 
+                       background: color, 
+                       transition: 'all 0.2s', 
+                       cursor: 'crosshair',
+                       display: 'flex',
+                       alignItems: 'center',
+                       justifyContent: 'center',
+                       fontSize: 9,
+                       color: textColor,
+                       fontWeight: 600
+                     }}
                      onMouseOver={(e) => { e.currentTarget.style.opacity = '0.7'; }}
                      onMouseOut={(e) => { e.currentTarget.style.opacity = '1'; }}
-                   ></div>
+                   >
+                     {d.count > 0 ? d.count : ''}
+                   </div>
                  )
               })}
             </div>

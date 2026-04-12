@@ -19,6 +19,7 @@ import {
 } from "./mockData"
 import { useSpacetimeTables } from "../../hooks/useSpacetimeTables"
 import { useSpacetime } from "../../components/SpacetimeProvider"
+import { useAgitation } from "../../contexts/AgitationContext"
 
 const RANGES = ["7d", "30d", "90d"] as const
 type Range = typeof RANGES[number]
@@ -70,8 +71,10 @@ export default function AnalyticsDashboard() {
       .slice(-days);
   }, [medications, days]);
 
+  // ── Live agitation data from Recognize button clicks ──────────────────
+  const { heatmapData } = useAgitation();
+  
   // ── Fallback visual data (for charts that need call analysis data) ─────
-  const heatmapData = useMemo(() => generateAgitationHeatmap(), [])
   const topicData = useMemo(() => generateTopicData(), [])
   const sentimentData = useMemo(() => generateSentimentData(days), [days])
 

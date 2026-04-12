@@ -24,6 +24,7 @@ import { endSession, SessionEndResponse } from "../lib/api";
 import { useSpacetime } from "./SpacetimeProvider";
 import { useSpacetimeTables } from "../hooks/useSpacetimeTables";
 import { useLiveDetection } from "../hooks/useLiveDetection";
+import { useAgitation } from "../contexts/AgitationContext";
 
 const CLIENTS = [
   { id: "person_101", name: "Margaret Johnson", relationship: "Patient" },
@@ -66,6 +67,7 @@ const Dashboard: React.FC = () => {
   const [errorToast, setErrorToast] = useState<string | null>(null);
   const [recognizeCooldown, setRecognizeCooldown] = useState(0);
 
+  const { incrementAgitation } = useAgitation();
   const snapshotRef = useRef<SnapshotCaptureRef>(null);
 
   // ── Hooks ──────────────────────────────────────────────────────────────────
@@ -208,8 +210,9 @@ const Dashboard: React.FC = () => {
   const handleRecognize = useCallback(async () => {
     if (recognizeCooldown > 0 || !snapshotRef.current) return;
     await snapshotRef.current.captureNow();
+    incrementAgitation(); // Increment heatmap counter for current day/hour
     setRecognizeCooldown(COOLDOWN_MS / 1000);
-  }, [recognizeCooldown]);
+  }, [recognizeCooldown, incrementAgitation]);
 
   // Cooldown countdown effect
   useEffect(() => {
