@@ -2,8 +2,8 @@
 
 ## Everyone runs this first
 
-  git clone https://github.com/YOUR_ORG/technocrats-innovation-challenge-Heisenbugs.git
-  cd technocrats-innovation-challenge-Heisenbugs
+  git clone https://github.com/YOUR_USER/memorycare-repo.git
+  cd memorycare-repo
 
 ---
 
@@ -16,11 +16,11 @@ Start the local server (keep this terminal open always):
   spacetime start
 
 Publish your module:
-  cd technocrats-innovation-challenge-Heisenbugs-db
-  spacetime publish --anonymous technocrats-innovation-challenge-Heisenbugs-db
+  cd memorycare-db
+  spacetime publish --anonymous memorycare-db
 
 Watch logs:
-  spacetime logs technocrats-innovation-challenge-Heisenbugs-db --follow
+  spacetime logs memorycare-db --follow
 
 Run the bridge:
   cd bridge

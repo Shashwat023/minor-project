@@ -1,4 +1,4 @@
-# MemoryCare - Technocrats Innovation Challenge 
+# MemoryCare
 
 > **An AI-assisted, real-time dementia care platform.** <br>
 > Features low-latency WebRTC live calls, rolling audio chunk transcription via **faster-whisper**, clinical session summarization via **Groq LLM**, and localized face-detection snapshots bridged externally. 
@@ -7,12 +7,14 @@
 
 ## 🌟 Key Features
 
-1. **WebRTC Video Calls**: Low-latency peer-to-peer video connection tailored for caregiver and client interactions.
-2. **Real-time Audio Transcription**: Live audio slicing (20s chunks) pushed to the STT pipeline powered by `faster-whisper` (CPU-optimized with Voice Activity Detection to prevent hallucinations). 
-3. **Rolling Clinical Notes**: Summarizes ongoing conversation chunks dynamically in the background via Groq's high-speed inference without blocking the application flow. Output enforces therapeutic terminology ("client" vs "patient").
-4. **Snapshot Event Pipeline**: Generates periodic face snapshots on the client side, caches them locally, and bridges them asynchronously via `bridge-snaps` script to a secure remote Machine Learning Endpoint for identity analysis.
-5. **Modern, Responsive UI**: Redesigned dashboard and navigation structure ensuring standard branding, high accessibility, and a premium caregiving experience.
-6. **SpacetimeDB Integrations**: Data bridge orchestrates identity registration logs seamlessly into SpacetimeDB reducers.
+1. **WebRTC Video Calls**: Low-latency peer-to-peer video connection tailored for caregiver and client interactions with a Google Meet-inspired interface.
+2. **Real-time Audio Transcription**: Live audio slicing (20s chunks) pushed to the STT pipeline powered by `faster-whisper`.
+3. **Rolling Clinical Notes**: Summarizes ongoing conversation chunks dynamically in the background via Groq LLM.
+4. **Intelligent Face Analysis**: Periodic face snapshots analyzed for identity and emotion, with face-aware UI popups for patient context.
+5. **State-Driven Interactive Demo**: A 5-state progressive UI (Standby, Detecting, Active, Analyzing, Summary) with cinematic transitions.
+6. **Premium Dark Aesthetic**: High-end Medical-Tech design language using glassmorphism, fluid animations (Framer Motion), and a midnight palette.
+7. **Comprehensive Care Suite**: Integrated modules for Cognitive Quizzes, Analytics, Geolocation, and Medication Management.
+8. **SpacetimeDB Integration**: Real-time distributed state management and identity logging.
 
 ---
 
@@ -123,6 +125,8 @@ Run these components entirely parallel via separate terminals at the repository 
 
 ## 📝 Recent System Enhancements
 
-* **Transcriber Optimization**: Removed heavy `openai-whisper` in standard implementation favor of `faster-whisper`. Standardized internal FFmpeg logic directly down-sampling inputs into predictable formats preventing `NaN` tensor crashes. Added `vad_filter` logic resolving silent-room summary hallucination loops.
-* **Clinical Prompt Standards**: The LLM output generation rules have been strictly standardized to utilize `"client"` dynamically dropping previous hardcoded identifiers.
-* **Identity Bridge Isolation**: The snapshot integration avoids main-thread collision. Videos slice locally, save to disk, and the `bridge-snaps/bridge.py` autonomously discovers and forwards payloads reliably without dragging network performance inside the WebRTC app loop.
+* **Premium UI/UX Redesign**: Transitioned to a "Dark Premium Healthcare-Tech" aesthetic. Implemented a 5-state state machine for the demo page, ensuring a cinematic experience with smooth transitions.
+* **Feature Expansion**: Added integrated modules for medication tracking, cognitive testing, and geolocation monitoring.
+* **Inference Optimization**: Switched to `faster-whisper` with VAD (Voice Activity Detection) filters to eliminate hallucinations during silent periods.
+* **Stability & Privacy**: Improved Redis session cleanup logic for instant data erasure post-session. Enhanced snapshot quality while maintaining privacy-first local processing.
+* **Personal Evolution**: Formally transitioned from a competition entry to a dedicated personal project focused on accessible AI healthcare solutions.
